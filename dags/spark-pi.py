@@ -1,35 +1,35 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+from airflow.operators.dummy import DummyOperator
 from datetime import datetime
 
-default_args = {
-    'owner': 'airflow',
-    'start_date': datetime(2024, 1, 1),
-    'retries': 0
-}
-
-
 with DAG(
-    dag_id='spark_pi_k8s',
-    default_args=default_args,
+    dag_id="spark_job_in_other_namespace",
+    start_date=datetime(2025, 1, 1),
     schedule_interval=None,
     catchup=False,
-    description='Run Spark Pi job via KubernetesPodOperator',
+    tags=["spark", "k8s"],
 ) as dag:
 
-    spark_pi = KubernetesPodOperator(
-        task_id='spark_pi_task',
-        namespace='spark-jobs',  # Run in spark-operator namespace
-        name='spark-pi',
-        image='bitnami/spark:3.1.1',
-        cmds=['/opt/bitnami/spark/bin/spark-submit'],
+    start = DummyOperator(task_id="start")
+
+    spark_job = KubernetesPodOperator(
+        task_id="spark_pi_job",
+        name="spark-pi",
+        namespace="spark-space",  # Target namespace
+        image="bitnami/spark:3.3.1",  # Spark image
+        cmds=["/opt/bitnami/spark/bin/spark-submit"],
         arguments=[
-            '--master', 'k8s://https://kubernetes.default.svc',
-            '--deploy-mode', 'cluster',
-            '--class', 'org.apache.spark.examples.SparkPi',
-            'local:///opt/bitnami/spark/examples/jars/spark-examples_2.12-3.1.1.jar',
-            '1000'
+            "--master", "k8s://https://kubernetes.default.svc",  # Spark on K8s
+            "--deploy-mode", "cluster",
+            "--class", "org.apache.spark.examples.SparkPi",
+            "local:///opt/bitnami/spark/examples/jars/spark-examples_2.12-3.3.1.jar",
+            "10"
         ],
         get_logs=True,
-        is_delete_operator_pod=True
+        is_delete_operator_pod=True,
     )
+
+    end = DummyOperator(task_id="end")
+
+    start >> spark_job >> end
