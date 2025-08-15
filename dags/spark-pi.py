@@ -40,6 +40,10 @@ with DAG(
             APP_JAR,
             "10"
         ],
+        env_vars={
+            "HOME": "/opt/airflow",  # must be an absolute path
+            "SPARK_HOME": "/opt/bitnami/spark",
+        },
         get_logs=True,
         is_delete_operator_pod=False,  # Keep driver pod for debugging if fails
         in_cluster=True,
