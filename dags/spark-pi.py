@@ -19,7 +19,7 @@ with DAG(
 
     spark_pi = KubernetesPodOperator(
         task_id='spark_pi_task',
-        namespace='spark-operator',  # Run in spark-operator namespace
+        namespace='spark-jobs',  # Run in spark-operator namespace
         name='spark-pi',
         image='bitnami/spark:3.1.1',
         cmds=['/opt/bitnami/spark/bin/spark-submit'],
