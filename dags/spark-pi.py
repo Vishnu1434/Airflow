@@ -5,9 +5,9 @@ from datetime import datetime
 
 with DAG(
     dag_id="spark_job_in_other_namespace",
-    start_date=datetime(2025, 1, 1),
-    schedule_interval=None,
-    catchup=False,
+    start_date=datetime(2025, 8, 15, 0),
+    schedule_interval="@hourly",
+    catchup=True,
     tags=["spark", "k8s"],
 ) as dag:
 
