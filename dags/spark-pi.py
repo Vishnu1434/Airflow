@@ -14,7 +14,7 @@ EXECUTOR_INSTANCES = "2"
 with DAG(
     dag_id="spark_cluster_job_with_executors",
     start_date=datetime(2025, 8, 15, 9),
-    schedule_interval=None,
+    schedule_interval="@hourly",
     catchup=True,
     tags=["spark", "k8s"],
     default_args={
