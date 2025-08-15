@@ -35,6 +35,7 @@ with DAG(
             "--master", SPARK_MASTER_URL,
             "--deploy-mode", "cluster",         # driver runs as pod
             "--class", APP_CLASS,
+            "--conf", "spark.jars.ivy=/tmp/.ivy2",
             "--conf", f"spark.executor.instances={EXECUTOR_INSTANCES}",  # 2 executors
             APP_JAR,
             "10"
