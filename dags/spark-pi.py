@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 # Spark job configuration
 SPARK_IMAGE = "bitnami/spark:3.3.1"
-NAMESPACE = "spark-space"
+NAMESPACE = "spark-jobs"
 SPARK_MASTER_URL = "k8s://https://kubernetes.default.svc"
 APP_CLASS = "org.apache.spark.examples.SparkPi"
 APP_JAR = "local:///opt/bitnami/spark/examples/jars/spark-examples_2.12-3.3.1.jar"
