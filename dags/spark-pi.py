@@ -16,6 +16,7 @@ with DAG(
     schedule_interval="@hourly",
     catchup=True,
     tags=["spark", "k8s"],
+    max_active_runs=1,
     default_args={
         "retries": 0,
         "retry_delay": timedelta(minutes=5),
