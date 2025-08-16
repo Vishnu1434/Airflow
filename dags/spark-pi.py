@@ -37,7 +37,7 @@ with DAG(
             "--class", APP_CLASS,
             "--conf", "spark.jars.ivy=/tmp/.ivy2",  # absolute ivy cache
             "--conf", f"spark.executor.instances={EXECUTOR_INSTANCES}",
-            "--conf", "spark.kubernetes.namespace=spark-space",  # driver/executors in spark-space
+            "--conf", "spark.kubernetes.namespace=spark-jobs",  # driver/executors in spark-space
             "--conf", "spark.kubernetes.driver.pod.name=spark-driver",
             "--conf", "spark.kubernetes.executor.podNamePrefix=spark-exec",
             APP_JAR
