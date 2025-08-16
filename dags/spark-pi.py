@@ -27,28 +27,37 @@ with DAG(
 
     spark_submit = KubernetesPodOperator(
         task_id="spark_submit_job",
-        name="submitter",  # submitter pod name
+        name="submitter",
         namespace="airflow",  # Airflow namespace
-        image=SPARK_IMAGE,
-        image_pull_policy="IfNotPresent",
+        image="bitnami/spark:3.2.4",
         cmds=["/opt/bitnami/spark/bin/spark-submit"],
         arguments=[
-            "--master", SPARK_MASTER_URL,
+            "--master", "k8s://https://kubernetes.default.svc",
             "--deploy-mode", "cluster",
-            "--class", APP_CLASS,
-            "--conf", "spark.jars.ivy=/tmp/.ivy2",  # absolute ivy cache
-            "--conf", f"spark.executor.instances={EXECUTOR_INSTANCES}",
-            "--conf", "spark.kubernetes.namespace=spark-jobs",  # driver/executors in spark-space
+            "--class", "demo.App",
+            "--conf", "spark.jars.ivy=/tmp/.ivy2",
+            "--conf", "spark.executor.instances=2",
+            "--conf", "spark.kubernetes.namespace=spark-jobs",
             "--conf", "spark.kubernetes.driver.pod.name=spark-driver",
             "--conf", "spark.kubernetes.executor.podNamePrefix=spark-exec",
-            APP_JAR
+            "local:///opt/spark-app/app.jar"
         ],
-        env_vars={
-            "HOME": "/opt/airflow",
-            "SPARK_HOME": "/opt/bitnami/spark",
-        },
+        volume_mounts=[
+            {
+                "name": "spark-jar-storage",
+                "mountPath": "/opt/spark-app"
+            }
+        ],
+        volumes=[
+            {
+                "name": "spark-jar-storage",
+                "persistentVolumeClaim": {
+                    "claimName": "spark-jar-pvc"
+                }
+            }
+        ],
         get_logs=True,
-        is_delete_operator_pod=False,  # keep submitter pod for debugging
+        is_delete_operator_pod=False,
         in_cluster=True,
     )
 
