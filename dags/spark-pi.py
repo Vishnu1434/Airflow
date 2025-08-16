@@ -42,7 +42,7 @@ with DAG(
         name="spark-submitter",
         namespace=NAMESPACE,
         image=SPARK_IMAGE,
-        cmds=["/opt/bitnami/spark/bin/spark-submit"],
+        cmds=['/opt/bitnami/spark/bin/spark-submit --conf spark.driver.extraJavaOptions="-Dhadoop.security.authentication=simple"'],
         arguments=[
             "--master", SPARK_MASTER_URL,
             "--deploy-mode", "cluster",
