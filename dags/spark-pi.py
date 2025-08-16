@@ -2,11 +2,12 @@ from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from airflow.operators.empty import EmptyOperator
 from datetime import datetime, timedelta
+from kubernetes.client import V1Volume, V1VolumeMount, V1PersistentVolumeClaimVolumeSource
 
 NAMESPACE = "spark-jobs"
 SPARK_IMAGE = "ghcr.io/vishnu1434/spark-scala:main"
 SPARK_MASTER_URL = "k8s://https://kubernetes.default.svc"
-APP_CLASS = "demo.App"   # <-- change if your main class has a different name
+APP_CLASS = "demo.App"
 APP_JAR = "local:///opt/spark-app/app.jar"
 EXECUTOR_INSTANCES = 2
 
@@ -28,34 +29,32 @@ with DAG(
     spark_submit = KubernetesPodOperator(
         task_id="spark_submit_job",
         name="submitter",
-        namespace="airflow",  # Airflow namespace
-        image="bitnami/spark:3.2.4",
+        namespace=NAMESPACE,
+        image=SPARK_IMAGE,
         cmds=["/opt/bitnami/spark/bin/spark-submit"],
         arguments=[
-            "--master", "k8s://https://kubernetes.default.svc",
+            "--master", SPARK_MASTER_URL,
             "--deploy-mode", "cluster",
-            "--class", "demo.App",
+            "--class", APP_CLASS,
             "--conf", "spark.jars.ivy=/tmp/.ivy2",
-            "--conf", "spark.executor.instances=2",
-            "--conf", "spark.kubernetes.namespace=spark-jobs",
+            "--conf", f"spark.executor.instances={EXECUTOR_INSTANCES}",
+            "--conf", f"spark.kubernetes.namespace={NAMESPACE}",
             "--conf", "spark.kubernetes.driver.pod.name=spark-driver",
             "--conf", "spark.kubernetes.executor.podNamePrefix=spark-exec",
-            "local:///opt/spark-app/app.jar"
+            APP_JAR,
         ],
-        volume_mounts=[
-            {
-                "name": "spark-jar-storage",
-                "mountPath": "/opt/spark-app"
-            }
-        ],
-        volumes=[
-            {
-                "name": "spark-jar-storage",
-                "persistentVolumeClaim": {
-                    "claimName": "spark-jar-pvc"
-                }
-            }
-        ],
+        env_vars={
+            "HOME": "/opt/airflow",
+            "SPARK_HOME": "/opt/bitnami/spark",
+        },
+        volumes=[V1Volume(
+            name="spark-jar",
+            persistent_volume_claim=V1PersistentVolumeClaimVolumeSource(claim_name="spark-jar-pvc")
+        )],
+        volume_mounts=[V1VolumeMount(
+            name="spark-jar",
+            mount_path="/opt/spark-app"
+        )],
         get_logs=True,
         is_delete_operator_pod=False,
         in_cluster=True,
