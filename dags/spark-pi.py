@@ -54,6 +54,7 @@ with DAG(
             "--conf", "spark.kubernetes.executor.podNamePrefix=spark-exec",
             "--conf", f"spark.kubernetes.driver.container.image={SPARK_IMAGE}",
             "--conf", "spark.hadoop.hadoop.security.authentication=simple",
+            "--conf", "spark.hadoop.hadoop.security.authorization=false",
             f"local://{APP_JAR_PATH_IN_PVC}"
         ],
         volumes=[spark_jar_volume],
