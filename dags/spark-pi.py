@@ -52,7 +52,8 @@ with DAG(
             "--conf", f"spark.kubernetes.namespace={NAMESPACE}",
             "--conf", "spark.kubernetes.driver.pod.name=spark-driver",
             "--conf", "spark.kubernetes.executor.podNamePrefix=spark-exec",
-            "--conf", f"spark.kubernetes.driver.container.image={SPARK_IMAGE}",  # <--- add this
+            "--conf", f"spark.kubernetes.driver.container.image={SPARK_IMAGE}",
+            "--conf", "spark.hadoop.hadoop.security.authentication=simple",
             f"local://{APP_JAR_PATH_IN_PVC}"
         ],
         volumes=[spark_jar_volume],
@@ -60,6 +61,11 @@ with DAG(
         get_logs=True,
         is_delete_operator_pod=False,   # keep submitter pod for debugging
         in_cluster=True,
+        env_vars={
+            "USER": "airflow",
+            "HOME": "/opt/airflow",
+            "SPARK_HOME": "/opt/bitnami/spark"
+        }
     )
 
     end = EmptyOperator(task_id="end")
