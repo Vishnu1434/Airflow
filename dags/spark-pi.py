@@ -55,6 +55,9 @@ with DAG(
             "--conf", f"spark.kubernetes.driver.container.image={SPARK_IMAGE}",
             "--conf", "spark.hadoop.hadoop.security.authentication=simple",
             "--conf", "spark.hadoop.hadoop.security.authorization=false",
+            "--conf", "spark.driver.extraJavaOptions=-Djava.security.auth.login.config=/dev/null",
+            "--conf", "spark.executor.extraJavaOptions=-Djava.security.auth.login.config=/dev/null",
+
             f"local://{APP_JAR_PATH_IN_PVC}"
         ],
         volumes=[spark_jar_volume],
