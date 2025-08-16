@@ -30,6 +30,7 @@ with DAG(
         name="submitter",  # submitter pod name
         namespace="airflow",  # Airflow namespace
         image=SPARK_IMAGE,
+        image_pull_policy="IfNotPresent",
         cmds=["/opt/bitnami/spark/bin/spark-submit"],
         arguments=[
             "--master", SPARK_MASTER_URL,
