@@ -1,15 +1,14 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
-from airflow.operators.dummy import DummyOperator
+from airflow.operators.empty import EmptyOperator
 from datetime import datetime, timedelta
 
-# Spark job configuration
-SPARK_IMAGE = "bitnami/spark:3.3.1"
 NAMESPACE = "spark-jobs"
+SPARK_IMAGE = "ghcr.io/vishnu1434/spark-scala:main"
 SPARK_MASTER_URL = "k8s://https://kubernetes.default.svc"
-APP_CLASS = "org.apache.spark.examples.SparkPi"
-APP_JAR = "local:///opt/bitnami/spark/examples/jars/spark-examples_2.12-3.3.1.jar"
-EXECUTOR_INSTANCES = "2"
+APP_CLASS = "demo.App"   # <-- change if your main class has a different name
+APP_JAR = "local:///opt/spark-app/app.jar"
+EXECUTOR_INSTANCES = 2
 
 with DAG(
     dag_id="spark_cluster_job_with_executors",
@@ -23,33 +22,34 @@ with DAG(
     },
 ) as dag:
 
-    start = DummyOperator(task_id="start")
+    start = EmptyOperator(task_id="start")
 
     spark_submit = KubernetesPodOperator(
         task_id="spark_submit_job",
-        name="spark-pi-job",
-        namespace=NAMESPACE,
+        name="submitter",  # submitter pod name
+        namespace="airflow",  # Airflow namespace
         image=SPARK_IMAGE,
         cmds=["/opt/bitnami/spark/bin/spark-submit"],
         arguments=[
             "--master", SPARK_MASTER_URL,
-            "--deploy-mode", "cluster",         # driver runs as pod
+            "--deploy-mode", "cluster",
             "--class", APP_CLASS,
-            "--conf", "spark.jars.ivy=/tmp/.ivy2",
-            "--conf", f"spark.executor.instances={EXECUTOR_INSTANCES}",  # 2 executors
-            APP_JAR,
-            "10"
+            "--conf", "spark.jars.ivy=/tmp/.ivy2",  # absolute ivy cache
+            "--conf", f"spark.executor.instances={EXECUTOR_INSTANCES}",
+            "--conf", "spark.kubernetes.namespace=spark-space",  # driver/executors in spark-space
+            "--conf", "spark.kubernetes.driver.pod.name=spark-driver",
+            "--conf", "spark.kubernetes.executor.podNamePrefix=spark-exec",
+            APP_JAR
         ],
         env_vars={
-            "HOME": "/opt/airflow",  # must be an absolute path
+            "HOME": "/opt/airflow",
             "SPARK_HOME": "/opt/bitnami/spark",
         },
         get_logs=True,
-        is_delete_operator_pod=False,  # Keep driver pod for debugging if fails
+        is_delete_operator_pod=False,  # keep submitter pod for debugging
         in_cluster=True,
-        # Optional: you can add nodeSelector, tolerations, or resources here
     )
 
-    end = DummyOperator(task_id="end")
+    end = EmptyOperator(task_id="end")
 
     start >> spark_submit >> end
