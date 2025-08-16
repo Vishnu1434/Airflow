@@ -47,12 +47,13 @@ with DAG(
             "--master", SPARK_MASTER_URL,
             "--deploy-mode", "cluster",
             "--class", APP_CLASS,
-            "--conf", "spark.jars.ivy=/tmp/.ivy2",  # optional absolute path for Ivy cache
+            "--conf", "spark.jars.ivy=/tmp/.ivy2",
             "--conf", f"spark.executor.instances={EXECUTOR_INSTANCES}",
             "--conf", f"spark.kubernetes.namespace={NAMESPACE}",
             "--conf", "spark.kubernetes.driver.pod.name=spark-driver",
             "--conf", "spark.kubernetes.executor.podNamePrefix=spark-exec",
-            f"local://{APP_JAR_PATH_IN_PVC}"   # use jar from PVC mount
+            "--conf", f"spark.kubernetes.driver.container.image={SPARK_IMAGE}",  # <--- add this
+            f"local://{APP_JAR_PATH_IN_PVC}"
         ],
         volumes=[spark_jar_volume],
         volume_mounts=[spark_jar_mount],
