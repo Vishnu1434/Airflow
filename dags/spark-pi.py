@@ -11,7 +11,7 @@ APP_JAR = "local:///opt/spark-app/app.jar"
 EXECUTOR_INSTANCES = 2
 
 with DAG(
-    dag_id="spark_cluster_job_with_executors",
+    dag_id="test-run-1",
     start_date=datetime(2025, 8, 15, 9),
     schedule_interval="@hourly",
     catchup=True,
