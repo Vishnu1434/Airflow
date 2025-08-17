@@ -46,6 +46,24 @@ krb5_conf_mount = k8s.V1VolumeMount(
     read_only=True
 )
 
+spark_cmd = """
+/opt/bitnami/spark/bin/spark-submit \
+  --master k8s://https://kubernetes.default.svc \
+  --deploy-mode cluster \
+  --name demo-app \
+  --class demo.App \
+  --conf spark.executor.instances=2 \
+  --conf spark.kubernetes.namespace=spark-jobs \
+  --conf spark.kubernetes.container.image=bitnami/spark:3.2.4 \
+  --conf spark.kubernetes.authenticate.driver.serviceAccountName=spark \
+  --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.jars.mount.path=/mnt/jars \
+  --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.jars.claimName=spark-jar-pvc \
+  --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.jars.mount.path=/mnt/jars \
+  --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.jars.claimName=spark-jar-pvc \
+  local:///mnt/jars/app.jar
+"""
+
+
 with DAG(
     dag_id="spark_job_with_kerberos",
     start_date=datetime(2025, 8, 16),
@@ -61,41 +79,17 @@ with DAG(
 
     start = EmptyOperator(task_id="start")
 
-    spark_submit = KubernetesPodOperator(
-        task_id="spark_submit_job",
-        name="spark-submitter",
-        namespace=NAMESPACE,
-        image=SPARK_IMAGE,
-        cmds=['/opt/bitnami/spark/bin/spark-submit'],
-        arguments=[
-            "--master", SPARK_MASTER_URL,
-            "--deploy-mode", "cluster",
-            "--class", APP_CLASS,
-            "--conf", "spark.jars.ivy=/tmp/.ivy2",
-            "--conf", f"spark.executor.instances={EXECUTOR_INSTANCES}",
-            "--conf", f"spark.kubernetes.namespace={NAMESPACE}",
-            "--conf", "spark.kubernetes.driver.pod.name=spark-driver",
-            "--conf", "spark.kubernetes.executor.podNamePrefix=spark-exec",
-            "--conf", f"spark.kubernetes.driver.container.image={SPARK_IMAGE}",
-            "--conf", f"spark.kubernetes.kerberos.krb5.conf={KRB5_CONF_PATH}",
-            "--conf", f"spark.kubernetes.kerberos.keytab={KEYTAB_PATH_IN_PVC}",
-            "--conf", "spark.kubernetes.authenticate.driver.serviceAccountName=spark",
-            f"local://{APP_JAR_PATH_IN_PVC}"
-        ],
-        volumes=[spark_jar_volume, spark_keytab_volume, krb5_conf_volume],
-        volume_mounts=[spark_jar_mount, spark_keytab_mount, krb5_conf_mount],
-        get_logs=True,
-        is_delete_operator_pod=False,
-        in_cluster=True,
-        env_vars={
-            "USER": "airflow",
-            "HOME": "/opt/airflow",
-            "SPARK_HOME": "/opt/bitnami/spark",
-            "KRB5_CONFIG": KRB5_CONF_PATH,
-            "KRB5_CLIENT_KTNAME": KEYTAB_PATH_IN_PVC
-        }
+    spark_operator = KubernetesPodOperator(
+        task_id="spark_task",
+        name="spark-launch",
+        namespace="spark-jobs",
+        image="bitnami/spark:3.2.4",
+        cmds=["/bin/bash", "-c"],
+        arguments=[spark_cmd],
+        is_delete_operator_pod=True,
+        env_vars={"HADOOP_CONF_DIR": "", "KRB5_CONFIG": ""}
     )
 
     end = EmptyOperator(task_id="end")
 
-    start >> spark_submit >> end
+    start >> spark_operator >> end
