@@ -52,6 +52,7 @@ spark_cmd = """
   --deploy-mode cluster \
   --name demo-app \
   --class demo.App \
+  --conf spark.jars.ivy=/tmp/.ivy2 \
   --conf spark.executor.instances=2 \
   --conf spark.kubernetes.namespace=spark-jobs \
   --conf spark.kubernetes.container.image=bitnami/spark:3.2.4 \
@@ -87,7 +88,7 @@ with DAG(
         cmds=["/bin/bash", "-c"],
         arguments=[spark_cmd],
         is_delete_operator_pod=True,
-        env_vars={"HADOOP_CONF_DIR": "", "KRB5_CONFIG": ""}
+        env_vars={"HADOOP_CONF_DIR": "", "KRB5_CONFIG": "", "HOME": "/tmp"}
     )
 
     end = EmptyOperator(task_id="end")
