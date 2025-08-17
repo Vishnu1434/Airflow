@@ -12,7 +12,7 @@ with DAG(
     submit_spark_app = SparkKubernetesOperator(
         task_id="submit_spark_app",
         namespace="spark-jobs",  # ✅ where SparkApplication CR should live
-        application_file="/opt/airflow/dags/spark.yaml",  # ✅ YAML inside Airflow's DAG folder
+        application_file="spark.yaml",  # ✅ YAML inside Airflow's DAG folder
         kubernetes_conn_id="kubernetes_default",
         do_xcom_push=False,
     )
