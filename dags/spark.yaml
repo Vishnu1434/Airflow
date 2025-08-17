@@ -1,0 +1,32 @@
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: demo-app
+  namespace: spark-jobs
+spec:
+  type: Scala
+  mode: cluster
+  image: "bitnami/spark:3.2.4"
+  imagePullPolicy: IfNotPresent
+  mainClass: demo.App
+  mainApplicationFile: "local:///mnt/jars/app.jar"
+  sparkConf:
+    "spark.jars.ivy": "/tmp/.ivy2"
+  driver:
+    serviceAccount: spark
+    cores: 1
+    memory: "512m"
+    volumeMounts:
+      - name: jars
+        mountPath: /mnt/jars
+  executor:
+    cores: 1
+    instances: 2
+    memory: "512m"
+    volumeMounts:
+      - name: jars
+        mountPath: /mnt/jars
+  volumes:
+    - name: jars
+      persistentVolumeClaim:
+        claimName: spark-jar-pvc
