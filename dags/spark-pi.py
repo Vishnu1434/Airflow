@@ -57,10 +57,10 @@ spark_cmd = """
   --conf spark.kubernetes.namespace=spark-jobs \
   --conf spark.kubernetes.container.image=bitnami/spark:3.2.4 \
   --conf spark.kubernetes.authenticate.driver.serviceAccountName=spark \
+  --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.jars.options.claimName=spark-jar-pvc \
   --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.jars.mount.path=/mnt/jars \
-  --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.jars.claimName=spark-jar-pvc \
+  --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.jars.options.claimName=spark-jar-pvc \
   --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.jars.mount.path=/mnt/jars \
-  --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.jars.claimName=spark-jar-pvc \
   local:///mnt/jars/app.jar
 """
 
